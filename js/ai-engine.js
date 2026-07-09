@@ -369,6 +369,7 @@ const AIEngine = {
       answer: best.answer,
       category: best.category,
       confidence: best.confidence,
+      source: best.source || '',
       related: related.map(r => ({ question: r.question, category: r.category })),
       sources: [best.category]
     };

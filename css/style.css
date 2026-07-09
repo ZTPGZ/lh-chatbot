@@ -347,6 +347,22 @@ h4 {
   border-top: 1px solid var(--primary-faded);
 }
 .chat-message.user .bubble .sources { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
+.chat-message .bubble .source-link {
+  font-size: 0.8rem;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--primary-faded);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.chat-message .bubble .source-link a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+.chat-message .bubble .source-link a:hover { color: var(--primary-dark); }
 
 .chat-suggestions {
   display: flex;

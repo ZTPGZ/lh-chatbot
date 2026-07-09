@@ -139,6 +139,9 @@ const ChatbotUI = {
       </div>
       <div class="bubble">${this.formatMessage(text)}`;
     if (extras) {
+      if (extras.sourceUrl) {
+        html += `<div class="source-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> <a href="${this.escapeHtml(extras.sourceUrl)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a></div>`;
+      }
       if (extras.sources && extras.sources.length) {
         html += `<div class="sources"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ${this.escapeHtml(extras.sources.join(', '))}</div>`;
       }
@@ -239,7 +242,7 @@ const ChatbotUI = {
         followUpSuggestions = this.getFollowUpQuestions(result.category, query);
         this.hideTyping();
         this._lastResponseShown = true;
-        this.addBotMessage(answerText, { sources: result.sources || [result.category], suggestions: followUpSuggestions });
+        this.addBotMessage(answerText, { sourceUrl: result.source, sources: result.sources || [result.category], suggestions: followUpSuggestions });
         try { this.showSuggestions(result.category, query); } catch (e2) { console.error('showSuggestions error:', e2); }
       } else {
         const suggestions = (result && result.suggestions) || [];
@@ -523,6 +526,7 @@ const Admin = {
     document.getElementById('admin-form-title').textContent = 'Neue Frage hinzufügen';
     document.getElementById('admin-question').value = '';
     document.getElementById('admin-answer').value = '';
+    document.getElementById('admin-source').value = '';
     document.getElementById('admin-category').value = 'Allgemein';
     document.getElementById('admin-cancel').textContent = 'Abbrechen';
     const delBtn = this.form.querySelector('.btn-delete');
@@ -538,6 +542,7 @@ const Admin = {
     document.getElementById('admin-form-title').textContent = 'Frage bearbeiten';
     document.getElementById('admin-question').value = item.question;
     document.getElementById('admin-answer').value = item.answer;
+    document.getElementById('admin-source').value = item.source || '';
     document.getElementById('admin-category').value = item.category;
     document.getElementById('admin-cancel').textContent = 'Abbrechen';
     let delBtn = this.form.querySelector('.btn-delete');
@@ -557,15 +562,16 @@ const Admin = {
     const question = document.getElementById('admin-question').value.trim();
     const answer = document.getElementById('admin-answer').value.trim();
     const category = document.getElementById('admin-category').value;
+    const source = document.getElementById('admin-source').value.trim();
     if (!question || !answer) {
       this.showToast('Bitte füllen Sie alle Felder aus.', 'error');
       return;
     }
     if (this.editingId) {
-      KnowledgeBase.update(this.editingId, { question, answer, category });
+      KnowledgeBase.update(this.editingId, { question, answer, category, source });
       this.showToast('Frage erfolgreich aktualisiert!');
     } else {
-      KnowledgeBase.add({ question, answer, category });
+      KnowledgeBase.add({ question, answer, category, source });
       this.showToast('Neue Frage erfolgreich hinzugefügt!');
     }
     this.editingId = null;
@@ -619,9 +625,14 @@ const Admin = {
         <td>${ChatbotUI.escapeHtml(item.category)}</td>
         <td>${ChatbotUI.escapeHtml(item.question.length > 60 ? item.question.slice(0, 60) + '…' : item.question)}</td>
         <td>${ChatbotUI.escapeHtml(item.answer.length > 80 ? item.answer.slice(0, 80) + '…' : item.answer)}</td>
+        <td>${item.source ? '<a href="' + ChatbotUI.escapeHtml(item.source) + '" target="_blank" rel="noopener">Quelle</a>' : '—'}</td>
         <td class="actions">
-          <button class="edit-btn" onclick="Admin.edit(${item.id})">✏️</button>
-          <button class="del-btn" onclick="Admin.confirmDelete(${item.id})">🗑️</button>
+          <button class="edit-btn" onclick="Admin.edit(${item.id})" aria-label="Bearbeiten">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="del-btn" onclick="Admin.confirmDelete(${item.id})" aria-label="Löschen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
         </td>
       </tr>
     `).join('');
