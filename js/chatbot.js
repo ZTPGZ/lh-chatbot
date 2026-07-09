@@ -1058,7 +1058,7 @@ const DocBrowser = {
       <h4>Inhaltsvorschau</h4>
       <p>${doc.content}</p>
     `;
-    document.getElementById('doc-preview-modal').classList.add('visible');
+    document.getElementById('doc-preview-modal').classList.add('open');
   },
 
   downloadCurrent() {
@@ -1078,7 +1078,7 @@ const DocBrowser = {
 
   closePreview() {
     this._currentDoc = null;
-    document.getElementById('doc-preview-modal').classList.remove('visible');
+    document.getElementById('doc-preview-modal').classList.remove('open');
   }
 };
 
