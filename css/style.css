@@ -1091,6 +1091,24 @@ h4 {
   white-space: nowrap;
 }
 .doc-actions button:hover { background: var(--primary); color: var(--white); }
+.doc-actions .doc-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1.5px solid var(--primary-bg);
+  border-radius: 50px;
+  background: var(--white);
+  color: var(--primary);
+  font-size: 0.78rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  white-space: nowrap;
+}
+.doc-actions .doc-source-btn:hover { background: var(--primary); color: var(--white); }
+.doc-actions .doc-source-btn svg { flex-shrink: 0; }
 
 .doc-empty {
   text-align: center;

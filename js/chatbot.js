@@ -796,6 +796,7 @@ const DocBrowser = {
         title: entry.question,
         description: content.substring(0, 120) + '…',
         category: entry.category || 'Allgemein',
+        source: entry.source || '',
         type: 'pdf',
         date: '2024',
         filename: `dokument_${i + 1}.pdf`,
@@ -843,6 +844,7 @@ const DocBrowser = {
           </div>
           <div class="doc-actions">
             <button data-preview="${doc.id}">Vorschau</button>
+            ${doc.source ? `<a href="${DocBrowser.escapeHtml(doc.source)}" target="_blank" rel="noopener noreferrer" class="doc-source-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Quelle</a>` : ''}
           </div>
         </div>
       `;
@@ -1063,6 +1065,7 @@ const DocBrowser = {
         <dt>Datum</dt><dd>${doc.date}</dd>
         <dt>Dateiname</dt><dd>${doc.filename}</dd>
         <dt>Netzwerkpfad</dt><dd style="font-family:monospace;font-size:0.8rem;word-break:break-all;">\\\\lsserver\\qm-handbuch\\${doc.filename}</dd>
+        ${doc.source ? `<dt>Quelle</dt><dd><a href="${this.escapeHtml(doc.source)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(doc.source)}</a></dd>` : ''}
       </dl>
     `;
     document.getElementById('doc-preview-body').innerHTML = `
@@ -1075,7 +1078,7 @@ const DocBrowser = {
   downloadCurrent() {
     const doc = this._currentDoc;
     if (!doc) return;
-    const content = `Titel: ${doc.title}\nKategorie: ${doc.category}\nDateityp: ${doc.type.toUpperCase()}\nDatum: ${doc.date}\nDateiname: ${doc.filename}\nNetzwerkpfad: \\\\lsserver\\qm-handbuch\\${doc.filename}\n\n--- Inhaltsvorschau ---\n\n${doc.content}`;
+    const content = `Titel: ${doc.title}\nKategorie: ${doc.category}\nDateityp: ${doc.type.toUpperCase()}\nDatum: ${doc.date}\nDateiname: ${doc.filename}\nNetzwerkpfad: \\\\lsserver\\qm-handbuch\\${doc.filename}${doc.source ? `\nQuelle: ${doc.source}` : ''}\n\n--- Inhaltsvorschau ---\n\n${doc.content}`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
