@@ -686,6 +686,7 @@ const DocBrowser = {
 
     this.loadDocuments();
     this.renderCategories();
+    this.filtered = [...this.documents];
     this.renderList();
 
     this.searchBtn.addEventListener('click', () => this.filter());
