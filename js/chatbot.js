@@ -30,6 +30,67 @@ const ChatbotUI = {
     this.addBotMessage(modeText);
     this.updateModeIndicator();
     this.showSuggestions();
+    this.initSpeechRecognition();
+  },
+
+  initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const micBtn = document.getElementById('chat-mic');
+    if (!micBtn) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'de-DE';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    let isListening = false;
+
+    micBtn.addEventListener('click', () => {
+      if (isListening) {
+        recognition.stop();
+        return;
+      }
+      try {
+        recognition.start();
+      } catch (e) {
+        console.warn('SpeechRecognition start failed:', e);
+      }
+    });
+
+    recognition.onstart = () => {
+      isListening = true;
+      micBtn.classList.add('listening');
+      micBtn.querySelector('svg').style.stroke = '#fff';
+    };
+
+    recognition.onerror = (e) => {
+      console.warn('SpeechRecognition error:', e.error);
+      isListening = false;
+      micBtn.classList.remove('listening');
+      if (e.error === 'not-allowed') {
+        ChatbotUI.addBotMessage('Mikrofon-Zugriff wurde verweigert. Bitte erlauben Sie den Zugriff in den Browser-Einstellungen.', { sources: [] });
+      } else if (e.error === 'no-speech') {
+        // silent ignore
+      }
+    };
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .map(r => r[0].transcript)
+        .join('');
+      ChatbotUI.inputEl.value = transcript;
+      // Auto-send when final
+      if (e.results[e.results.length - 1].isFinal) {
+        ChatbotUI.sendMessage();
+      }
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+    };
   },
 
   updateModeIndicator() {
@@ -779,7 +840,8 @@ const DocBrowser = {
     this.docList.querySelectorAll('[data-preview]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = parseInt(btn.dataset.preview);
-        const doc = this.filtered.find(d => d.id === id);
+        let doc = this.filtered.find(d => d.id === id);
+        if (!doc) doc = this.documents.find(d => d.id === id);
         if (doc) this.showPreview(doc);
       });
     });

@@ -201,7 +201,6 @@ h4 {
   color: var(--secondary);
   margin-bottom: 48px;
   max-width: 600px;
-  opacity: 0.8;
 }
 
 /* ===== CARDS ===== */
@@ -346,7 +345,6 @@ h4 {
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px solid var(--primary-faded);
-  opacity: 0.7;
 }
 .chat-message.user .bubble .sources { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
 
@@ -402,6 +400,15 @@ h4 {
   justify-content: center;
 }
 .chat-input-area button:hover { background: var(--primary-dark); }
+.mic-btn { position: relative; }
+.mic-btn.listening { background: var(--accent); animation: mic-pulse 1.2s ease-in-out infinite; }
+.mic-btn.listening:hover { background: #008f2e; }
+.mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 163, 54, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(0, 163, 54, 0); }
+}
+.mic-error { color: var(--accent-orange); font-size: 0.75rem; margin-top: 4px; text-align: center; }
 
 /* ===== QUICK REPLIES ===== */
 .quick-replies {
@@ -1053,7 +1060,6 @@ h4 {
   font-size: 0.8rem;
   color: var(--secondary);
   margin-top: 2px;
-  opacity: 0.75;
 }
 .doc-meta span { margin-right: 12px; }
 .doc-actions button {
@@ -1077,16 +1083,14 @@ h4 {
   font-size: 0.95rem;
 }
 .doc-desc {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--secondary);
   margin-top: 4px;
-  opacity: 0.8;
 }
 .doc-count {
   font-size: 0.8rem;
   color: var(--secondary);
   white-space: nowrap;
-  opacity: 0.75;
 }
 
 /* ===== DOCUMENT PREVIEW MODAL ===== */
