@@ -766,7 +766,7 @@ const DocBrowser = {
               <span>${doc.type.toUpperCase()}</span>
               <span>${doc.date}</span>
             </div>
-            <div class="doc-desc" style="font-size:0.78rem;color:var(--mid-gray);margin-top:4px;">${desc}</div>
+            <div class="doc-desc">${desc}</div>
           </div>
           <div class="doc-actions">
             <button data-preview="${doc.id}">Vorschau</button>
@@ -778,7 +778,8 @@ const DocBrowser = {
     this.docList.querySelectorAll('[data-preview]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = parseInt(btn.dataset.preview);
-        this.showPreview(this.filtered[id]);
+        const doc = this.filtered.find(d => d.id === id);
+        if (doc) this.showPreview(doc);
       });
     });
   },

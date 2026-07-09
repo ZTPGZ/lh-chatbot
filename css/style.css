@@ -198,9 +198,10 @@ h4 {
 }
 .section-subtitle {
   font-size: 1.1rem;
-  color: var(--text-muted);
+  color: var(--secondary);
   margin-bottom: 48px;
   max-width: 600px;
+  opacity: 0.8;
 }
 
 /* ===== CARDS ===== */
@@ -237,7 +238,7 @@ h4 {
 .card-icon.lime { background: #F1F8E9; color: var(--accent-lime); }
 
 .card h3 { font-size: 1.3rem; margin-bottom: 10px; font-weight: 700; }
-.card p { font-size: 0.95rem; line-height: 1.6; color: var(--text-muted); }
+.card p { font-size: 0.95rem; line-height: 1.6; color: var(--secondary); }
 
 /* ===== FEATURES ===== */
 .features-grid {
@@ -259,7 +260,7 @@ h4 {
   color: var(--primary);
 }
 .feature-item h4 { font-size: 1.1rem; margin-bottom: 8px; font-weight: 700; }
-.feature-item p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+.feature-item p { font-size: 0.9rem; color: var(--secondary); line-height: 1.5; }
 
 /* ===== CHATBOT SECTION ===== */
 .chat-section { padding: 60px 0; }
@@ -341,10 +342,11 @@ h4 {
 }
 .chat-message .bubble .sources {
   font-size: 0.75rem;
-  color: var(--mid-gray);
+  color: var(--secondary);
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px solid var(--primary-faded);
+  opacity: 0.7;
 }
 .chat-message.user .bubble .sources { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
 
@@ -587,7 +589,7 @@ h4 {
   font-size: 1.6rem;
   margin-bottom: 8px;
 }
-.modal p { color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem; }
+.modal p { color: var(--secondary); margin-bottom: 24px; font-size: 0.95rem; }
 
 /* ===== FORMS ===== */
 .form-group { margin-bottom: 18px; }
@@ -722,8 +724,9 @@ h4 {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--mid-gray);
+  color: var(--secondary);
   font-size: 1.2rem;
+  opacity: 0.6;
 }
 
 /* ===== BUTTONS ===== */
@@ -1047,9 +1050,10 @@ h4 {
   text-overflow: ellipsis;
 }
 .doc-meta {
-  font-size: 0.75rem;
-  color: var(--mid-gray);
+  font-size: 0.8rem;
+  color: var(--secondary);
   margin-top: 2px;
+  opacity: 0.75;
 }
 .doc-meta span { margin-right: 12px; }
 .doc-actions button {
@@ -1069,13 +1073,20 @@ h4 {
 .doc-empty {
   text-align: center;
   padding: 40px 20px;
-  color: var(--mid-gray);
+  color: var(--secondary);
   font-size: 0.95rem;
+}
+.doc-desc {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  margin-top: 4px;
+  opacity: 0.8;
 }
 .doc-count {
   font-size: 0.8rem;
-  color: var(--mid-gray);
+  color: var(--secondary);
   white-space: nowrap;
+  opacity: 0.75;
 }
 
 /* ===== DOCUMENT PREVIEW MODAL ===== */
@@ -1105,7 +1116,7 @@ h4 {
   margin: 12px 0;
 }
 .doc-preview-meta dt { font-weight: 700; color: var(--secondary); }
-.doc-preview-meta dd { color: var(--mid-gray); margin-bottom: 8px; }
+.doc-preview-meta dd { color: var(--secondary); margin-bottom: 8px; }
 
 @media (max-width: 767px) {
   .doc-header { flex-direction: column; align-items: stretch; }
