@@ -19,13 +19,13 @@ const ChatbotUI = {
 
     // Begrüßung je nach Modus
     const modeText = AppConfig.mode === 'ollama'
-      ? `🧠 Hallo! Ich bin der QM-Assistent der Lebenshilfe Braunschweig.\n\n` +
+      ? `Hallo! Ich bin der QM-Assistent der Lebenshilfe Braunschweig.\n\n` +
         `Ich bin mit **Ollama (${AppConfig.ollamaModel})** verbunden und kann Ihre Fragen ` +
         `frei formulieren beantworten – basierend auf der internen Wissensdatenbank.\n\n` +
-        `💡 **Tipp**: Stellen Sie einfach Ihre Frage zum Prozessmanagement, QM oder BSC!`
-      : `🧠 Hallo! Ich bin der QM-Assistent der Lebenshilfe Braunschweig.\n\n` +
+        `**Tipp**: Stellen Sie einfach Ihre Frage zum Prozessmanagement, QM oder BSC!`
+      : `Hallo! Ich bin der QM-Assistent der Lebenshilfe Braunschweig.\n\n` +
         `Im **lokalen Modus** durchsuche ich die interne Wissensdatenbank und finde die passenden Antworten.\n\n` +
-        `💡 **Tipp**: Für KI-gestützte Antworten starten Sie das Backend (siehe README).`;
+        `**Tipp**: Für KI-gestützte Antworten starten Sie das Backend (siehe README).`;
 
     this.addBotMessage(modeText);
     this.updateModeIndicator();
@@ -60,7 +60,9 @@ const ChatbotUI = {
     const el = document.createElement('div');
     el.className = 'chat-message user';
     el.innerHTML = `
-      <div class="avatar" aria-hidden="true">👤</div>
+      <div class="avatar user" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
       <div class="bubble">${this.escapeHtml(text)}</div>
     `;
     this.messagesEl.appendChild(el);
@@ -71,11 +73,13 @@ const ChatbotUI = {
     const el = document.createElement('div');
     el.className = 'chat-message bot';
     let html = `
-      <div class="avatar" aria-hidden="true">🤖</div>
+      <div class="avatar bot" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
       <div class="bubble">${this.formatMessage(text)}`;
     if (extras) {
       if (extras.sources && extras.sources.length) {
-        html += `<div class="sources">📄 ${this.escapeHtml(extras.sources.join(', '))}</div>`;
+        html += `<div class="sources"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ${this.escapeHtml(extras.sources.join(', '))}</div>`;
       }
     }
     html += `</div>`;
@@ -110,62 +114,95 @@ const ChatbotUI = {
     el.innerHTML = '<span></span><span></span><span></span>';
     this.messagesEl.appendChild(el);
     this.scrollDown();
+    // Safety timeout: typing max 15s
+    if (this._typingTimer) clearTimeout(this._typingTimer);
+    this._typingTimer = setTimeout(() => {
+      this.hideTyping();
+      if (!this._lastResponseShown) {
+        this.addBotMessage('Die Antwortverarbeitung hat zu lange gedauert. Bitte versuchen Sie es erneut.', { sources: [] });
+        this._lastResponseShown = true;
+      }
+    }, 15000);
   },
 
   hideTyping() {
     const el = document.getElementById('typing-indicator');
     if (el) el.remove();
+    if (this._typingTimer) { clearTimeout(this._typingTimer); this._typingTimer = null; }
   },
 
   async findAndShowAnswer(query) {
+    this._lastResponseShown = false;
+    if (!query.trim()) {
+      this.hideTyping();
+      this.addBotMessage('Bitte geben Sie eine Frage ein.', { sources: [] });
+      this.showSuggestions();
+      return;
+    }
     this.conversationHistory.push({ role: 'user', content: query });
 
-    let answerText, sourcesList, followUpSuggestions;
+    try {
+      let answerText, sourcesList, followUpSuggestions;
 
-    // Mode 2: Ollama-Backend versuchen
-    if (AppConfig.mode === 'ollama' && AppConfig.backendUrl) {
-      const backendResult = await AppConfig.sendToBackend(query, this.conversationHistory.slice(-6));
-      if (backendResult && backendResult.answer) {
-        this.conversationHistory.push({ role: 'assistant', content: backendResult.answer });
-        answerText = `🤖 **KI-Antwort (${backendResult.model || AppConfig.ollamaModel})**\n\n${backendResult.answer}`;
-        sourcesList = backendResult.sources || [];
-        followUpSuggestions = this.getFollowUpQuestions(null, query);
-        this.addBotMessage(answerText, { sources: sourcesList, suggestions: followUpSuggestions });
+      // Mode 2: Ollama-Backend versuchen
+      if (AppConfig.mode === 'ollama' && AppConfig.backendUrl) {
+        const backendResult = await AppConfig.sendToBackend(query, this.conversationHistory.slice(-6));
+        if (backendResult && backendResult.answer) {
+          this.conversationHistory.push({ role: 'assistant', content: backendResult.answer });
+          answerText = `**KI-Antwort (${backendResult.model || AppConfig.ollamaModel})**\n\n${backendResult.answer}`;
+          followUpSuggestions = this.getFollowUpQuestions(null, query);
+          this.hideTyping();
+          this._lastResponseShown = true;
+          this.addBotMessage(answerText, { sources: backendResult.sources || [], suggestions: followUpSuggestions });
+          this.showSuggestions(null, query);
+          return;
+        }
+        console.warn('Backend nicht erreichbar, verwende lokale KI');
+        AppConfig.setMode('local');
+        this.updateModeIndicator();
+      }
+
+      // Mode 1: Lokale NLP-KI
+      const result = AIEngine.findBestAnswer(query);
+
+      if (result.answer && result.confidence >= 0.35) {
+        const confidenceText = AIEngine.formatConfidence(result.confidence);
+        answerText = `${confidenceText}\n\n${result.answer}`;
+        if (result.related && result.related.length > 0) {
+          answerText += '\n\n**Mehr dazu:**';
+          result.related.slice(0, 2).forEach(r => {
+            answerText += `\n• ${r.question}`;
+          });
+        }
+        this.conversationHistory.push({ role: 'assistant', content: result.answer });
+        followUpSuggestions = this.getFollowUpQuestions(result.category, query);
+        this.hideTyping();
+        this._lastResponseShown = true;
+        this.addBotMessage(answerText, { sources: result.sources, suggestions: followUpSuggestions });
+        this.showSuggestions(result.category, query);
+      } else {
+        const suggestions = result.suggestions || [];
+        const fallback = AIEngine.generateFallback(query, suggestions);
+        followUpSuggestions = this.getFallbackSuggestions(query);
+        this.hideTyping();
+        this._lastResponseShown = true;
+        this.addBotMessage(
+          `🤔 **Ich habe keine passende Antwort gefunden.**\n\n${fallback}`,
+          { sources: [], suggestions: followUpSuggestions }
+        );
         this.showSuggestions(null, query);
-        return;
       }
-      console.warn('Backend nicht erreichbar, verwende lokale KI');
-      AppConfig.setMode('local');
-      this.updateModeIndicator();
-    }
-
-    // Mode 1: Lokale NLP-KI
-    const result = AIEngine.findBestAnswer(query);
-
-    if (result.answer && result.confidence >= 0.35) {
-      const confidenceText = AIEngine.formatConfidence(result.confidence);
-      answerText = `${confidenceText}\n\n${result.answer}`;
-
-      if (result.related && result.related.length > 0) {
-        answerText += '\n\n**Mehr dazu:**';
-        result.related.slice(0, 2).forEach(r => {
-          answerText += `\n• ${r.question}`;
-        });
-      }
-
-      this.conversationHistory.push({ role: 'assistant', content: result.answer });
-      followUpSuggestions = this.getFollowUpQuestions(result.category, query);
-      this.addBotMessage(answerText, { sources: result.sources, suggestions: followUpSuggestions });
-      this.showSuggestions(result.category, query);
-    } else {
-      const suggestions = result.suggestions || [];
-      const fallback = AIEngine.generateFallback(query, suggestions);
-      followUpSuggestions = this.getFallbackSuggestions(query);
+    } catch (e) {
+      console.error('Fehler bei der Antwortfindung:', e);
+      this.hideTyping();
+      this._lastResponseShown = true;
       this.addBotMessage(
-        `🤔 **Ich habe keine passende Antwort gefunden.**\n\n${fallback}`,
-        { sources: [], suggestions: followUpSuggestions }
+        '**Es ist ein technischer Fehler aufgetreten.**\n\n' +
+        'Bitte versuchen Sie es erneut. Falls das Problem bestehen bleibt, ' +
+        'laden Sie die Seite neu oder wenden Sie sich an die QM-Abteilung.',
+        { sources: [] }
       );
-      this.showSuggestions(null, query);
+      this.showSuggestions();
     }
   },
 
@@ -544,7 +581,7 @@ const Admin = {
     const modelEl = document.getElementById('playground-model');
 
     if (AppConfig.mode === 'ollama') {
-      statusEl.innerHTML = '<span style="color:#00A336;font-weight:bold;">✅ Verbunden</span>';
+      statusEl.innerHTML = '<span style="color:#00A336;font-weight:bold;">Verbunden</span>';
       statusEl.innerHTML += `<br><small>Backend: ${AppConfig.backendUrl}</small>`;
       urlEl.value = AppConfig.backendUrl;
       modelEl.value = AppConfig.ollamaModel;
@@ -580,7 +617,7 @@ const Admin = {
 
     const result = await AppConfig.testConnection(url);
     if (result.success) {
-      resultEl.innerHTML = `<span style="color:#00A336;">✅ Erfolgreich! Backend: ${result.data.mode}, Modell: ${result.data.ollama_model}, ${result.data.kb_entries} Wissenseinträge</span>`;
+      resultEl.innerHTML = `<span style="color:#00A336;">Erfolgreich! Backend: ${result.data.mode}, Modell: ${result.data.ollama_model}, ${result.data.kb_entries} Wissenseinträge</span>`;
       AppConfig.backendUrl = url;
       AppConfig.mode = 'ollama';
       AppConfig.ollamaConnected = true;
@@ -591,7 +628,7 @@ const Admin = {
       resultEl.innerHTML = `<span style="color:#dc3545;">❌ Fehler: ${result.error}</span>`;
     }
     btn.disabled = false;
-    btn.textContent = '🔄 Verbindung testen';
+    btn.textContent = 'Verbindung testen';
   },
 
   async savePlaygroundConfig() {
@@ -614,9 +651,9 @@ const Admin = {
         AppConfig.backendUrl = url;
         AppConfig.ollamaModel = model;
         AppConfig.persist();
-        this.showToast('✅ Konfiguration gespeichert!');
+        this.showToast('Konfiguration gespeichert!');
       } else {
-        this.showToast('⚠️ Konfiguration lokal gespeichert (Backend nicht erreichbar)', 'error');
+        this.showToast('Konfiguration lokal gespeichert (Backend nicht erreichbar)', 'error');
         AppConfig.backendUrl = url;
         AppConfig.ollamaModel = model;
         AppConfig.persist();
@@ -632,8 +669,162 @@ const Admin = {
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  ChatbotUI.init();
-  FAQ.init();
-  Admin.init();
+// ===== DOKUMENTEN-BROWSER =====
+const DocBrowser = {
+  documents: [],
+  filtered: [],
+  currentCat: 'Alle',
+
+  init() {
+    this.docList = document.getElementById('doc-list');
+    this.catContainer = document.getElementById('doc-categories');
+    this.searchInput = document.getElementById('doc-search-input');
+    this.searchBtn = document.getElementById('doc-search-btn');
+
+    this.loadDocuments();
+    this.renderCategories();
+    this.renderList();
+
+    this.searchBtn.addEventListener('click', () => this.filter());
+    this.searchInput.addEventListener('input', () => this.filter());
+    this.searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.filter();
+    });
+
+    this.catContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cat]');
+      if (!btn) return;
+      this.catContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      this.currentCat = btn.dataset.cat;
+      this.filter();
+    });
+
+    document.getElementById('doc-preview-close').addEventListener('click', () => this.closePreview());
+    document.getElementById('doc-preview-close-btn').addEventListener('click', () => this.closePreview());
+    document.getElementById('doc-preview-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) this.closePreview();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.closePreview();
+    });
+  },
+
+  loadDocuments() {
+    const docs = KnowledgeBase.getAll();
+    this.documents = docs.map((entry, i) => ({
+      id: i,
+      title: entry.question,
+      description: entry.answer.replace(/<[^>]*>/g, '').substring(0, 120) + '…',
+      category: entry.category || 'Allgemein',
+      type: 'pdf',
+      date: '2024',
+      filename: `dokument_${i + 1}.pdf`,
+      content: entry.answer
+    }));
+    // Add some example metadata
+    this.documents.forEach((d, i) => {
+      const types = ['pdf', 'word', 'excel', 'pdf'];
+      d.type = types[i % types.length];
+    });
+  },
+
+  get categories() {
+    const cats = [...new Set(this.documents.map(d => d.category))];
+    return ['Alle', ...cats.sort()];
+  },
+
+  renderCategories() {
+    this.catContainer.innerHTML = this.categories.map(cat =>
+      `<button data-cat="${cat}" role="tab" class="${cat === 'Alle' ? 'active' : ''}">${cat}</button>`
+    ).join('');
+  },
+
+  renderList(items) {
+    const list = items || this.filtered;
+    if (list.length === 0) {
+      this.docList.innerHTML = '<div class="doc-empty">Keine Dokumente gefunden.</div>';
+      return;
+    }
+    this.docList.innerHTML = list.map(doc => {
+      const icon = this.typeIcon(doc.type);
+      return `
+        <div class="doc-item" data-category="${doc.category}">
+          <div class="doc-icon ${doc.type}">${icon}</div>
+          <div class="doc-info">
+            <div class="doc-name">${doc.title}</div>
+            <div class="doc-meta">
+              <span>${doc.category}</span>
+              <span>${doc.type.toUpperCase()}</span>
+              <span>${doc.date}</span>
+            </div>
+          </div>
+          <div class="doc-actions">
+            <button data-preview="${doc.id}">Vorschau</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.docList.querySelectorAll('[data-preview]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.preview);
+        this.showPreview(this.filtered[id]);
+      });
+    });
+  },
+
+  typeIcon(type) {
+    const icons = {
+      pdf: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+      word: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 14 17 12 13"/></svg>',
+      excel: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 13 12 17 8 17"/></svg>',
+    };
+    return icons[type] || icons.pdf;
+  },
+
+  filter() {
+    const query = this.searchInput.value.toLowerCase().trim();
+    this.filtered = this.documents.filter(d => {
+      const matchCat = this.currentCat === 'Alle' || d.category === this.currentCat;
+      const matchSearch = !query || d.title.toLowerCase().includes(query) || d.description.toLowerCase().includes(query);
+      return matchCat && matchSearch;
+    });
+    this.renderList(this.filtered);
+  },
+
+  showPreview(doc) {
+    if (!doc) return;
+    document.getElementById('doc-preview-title').textContent = doc.title;
+    document.getElementById('doc-preview-meta').innerHTML = `
+      <dl>
+        <dt>Kategorie</dt><dd>${doc.category}</dd>
+        <dt>Dateityp</dt><dd>${doc.type.toUpperCase()}</dd>
+        <dt>Datum</dt><dd>${doc.date}</dd>
+        <dt>Dateiname</dt><dd>${doc.filename}</dd>
+      </dl>
+    `;
+    document.getElementById('doc-preview-body').innerHTML = `
+      <h4>Inhaltsvorschau</h4>
+      <p>${doc.content}</p>
+    `;
+    document.getElementById('doc-preview-modal').classList.add('visible');
+  },
+
+  closePreview() {
+    document.getElementById('doc-preview-modal').classList.remove('visible');
+  }
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await ChatbotUI.init();
+  } catch (e) {
+    console.error('Chatbot init error:', e);
+    document.getElementById('chat-messages')?.insertAdjacentHTML('beforeend',
+      '<div class="chat-message bot"><div class="avatar bot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="bubble">Initialisierung fehlgeschlagen. Seite neu laden?</div></div>');
+  }
+  try { FAQ.init(); } catch (e) { console.error('FAQ init error:', e); }
+  try { Admin.init(); } catch (e) { console.error('Admin init error:', e); }
+  try { DocBrowser.init(); } catch (e) { console.error('DocBrowser init error:', e); }
 });
