@@ -676,6 +676,7 @@ const DocBrowser = {
   documents: [],
   filtered: [],
   currentCat: 'Alle',
+  searchHistory: [],
 
   init() {
     this.docList = document.getElementById('doc-list');
@@ -688,7 +689,7 @@ const DocBrowser = {
     this.renderList();
 
     this.searchBtn.addEventListener('click', () => this.filter());
-    this.searchInput.addEventListener('input', () => this.filter());
+    this.searchInput.addEventListener('input', () => this.filterDebounced());
     this.searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.filter();
     });
@@ -714,21 +715,23 @@ const DocBrowser = {
 
   loadDocuments() {
     const docs = KnowledgeBase.getAll();
-    this.documents = docs.map((entry, i) => ({
-      id: i,
-      title: entry.question,
-      description: entry.answer.replace(/<[^>]*>/g, '').substring(0, 120) + '…',
-      category: entry.category || 'Allgemein',
-      type: 'pdf',
-      date: '2024',
-      filename: `dokument_${i + 1}.pdf`,
-      content: entry.answer
-    }));
-    // Add some example metadata
-    this.documents.forEach((d, i) => {
-      const types = ['pdf', 'word', 'excel', 'pdf'];
-      d.type = types[i % types.length];
+    this.documents = docs.map((entry, i) => {
+      const content = entry.answer.replace(/<[^>]*>/g, '');
+      return {
+        id: i,
+        title: entry.question,
+        description: content.substring(0, 120) + '…',
+        category: entry.category || 'Allgemein',
+        type: 'pdf',
+        date: '2024',
+        filename: `dokument_${i + 1}.pdf`,
+        content,
+        // Pre-tokenize for faster search
+        _tokens: DocBrowser.tokenize(entry.question + ' ' + content + ' ' + (entry.category || ''))
+      };
     });
+    const types = ['pdf', 'word', 'excel', 'pdf', 'pdf', 'word'];
+    this.documents.forEach((d, i) => { d.type = types[i % types.length]; });
   },
 
   get categories() {
@@ -750,16 +753,19 @@ const DocBrowser = {
     }
     this.docList.innerHTML = list.map(doc => {
       const icon = this.typeIcon(doc.type);
+      const name = doc._query ? this.highlight(doc.title, doc._query) : doc.title;
+      const desc = doc._query ? this.highlight(doc.description, doc._query) : doc.description;
       return `
         <div class="doc-item" data-category="${doc.category}">
           <div class="doc-icon ${doc.type}">${icon}</div>
           <div class="doc-info">
-            <div class="doc-name">${doc.title}</div>
+            <div class="doc-name">${name}</div>
             <div class="doc-meta">
               <span>${doc.category}</span>
               <span>${doc.type.toUpperCase()}</span>
               <span>${doc.date}</span>
             </div>
+            <div class="doc-desc" style="font-size:0.78rem;color:var(--mid-gray);margin-top:4px;">${desc}</div>
           </div>
           <div class="doc-actions">
             <button data-preview="${doc.id}">Vorschau</button>
@@ -776,6 +782,22 @@ const DocBrowser = {
     });
   },
 
+  highlight(text, query) {
+    const words = query.split(/\s+/).filter(w => w.length > 1);
+    let result = this.escapeHtml(text);
+    for (const word of words) {
+      const re = new RegExp('(' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      result = result.replace(re, '<mark style="background:#FFF3CD;padding:1px 2px;border-radius:3px;">$1</mark>');
+    }
+    return result;
+  },
+
+  escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  },
+
   typeIcon(type) {
     const icons = {
       pdf: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
@@ -785,14 +807,173 @@ const DocBrowser = {
     return icons[type] || icons.pdf;
   },
 
+  /* ---------- Such-Algorithmen ---------- */
+
+  debounceTimer: null,
+  filterDebounced() {
+    clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => this.filter(), 200);
+  },
+
   filter() {
-    const query = this.searchInput.value.toLowerCase().trim();
-    this.filtered = this.documents.filter(d => {
-      const matchCat = this.currentCat === 'Alle' || d.category === this.currentCat;
-      const matchSearch = !query || d.title.toLowerCase().includes(query) || d.description.toLowerCase().includes(query);
-      return matchCat && matchSearch;
+    const raw = this.searchInput.value.trim();
+    const query = raw.toLowerCase();
+    this._query = raw;
+
+    if (!query) {
+      this.filtered = this.currentCat === 'Alle'
+        ? [...this.documents]
+        : this.documents.filter(d => d.category === this.currentCat);
+      return this.renderList(this.filtered);
+    }
+
+    // 1. Kategorie-Vorauswahl
+    const catFiltered = this.currentCat === 'Alle'
+      ? this.documents
+      : this.documents.filter(d => d.category === this.currentCat);
+
+    // 2. Mehrere Algorithmen parallel anwenden
+    const scored = catFiltered.map(doc => {
+      const score = this.computeScore(doc, query);
+      return { ...doc, _score: score };
     });
+
+    // 3. Nur relevante Ergebnisse (Score > 0)
+    this.filtered = scored
+      .filter(d => d._score > 0)
+      .sort((a, b) => b._score - a._score);
+
+    // 4. Query für Highlighting merken
+    this.filtered.forEach(d => { d._query = raw; });
+
     this.renderList(this.filtered);
+  },
+
+  computeScore(doc, query) {
+    const qTokens = DocBrowser.tokenize(query);
+    if (qTokens.length === 0) return query.length <= 2 ? 1 : 0;
+
+    const titleLow = doc.title.toLowerCase();
+    const descLow = doc.description.toLowerCase();
+    const filenameLow = doc.filename.toLowerCase();
+    const catLow = doc.category.toLowerCase();
+    const allText = titleLow + ' ' + descLow + ' ' + filenameLow + ' ' + catLow;
+
+    let score = 0;
+
+    // --- Algorithmus 1: Exakte Phrasenübereinstimmung (höchste Gewichtung) ---
+    if (allText.includes(query)) {
+      score += 100;
+      // Extra-Bonus wenn im Titel
+      if (titleLow.includes(query)) score += 50;
+    }
+
+    // --- Algorithmus 2: Vollständige Token-Übereinstimmung ---
+    const docTokens = doc._tokens || DocBrowser.tokenize(doc.title + ' ' + doc.description + ' ' + doc.category);
+    const matchedTokens = qTokens.filter(t => docTokens.includes(t));
+    score += matchedTokens.length * 15;
+
+    // --- Algorithmus 3: Teilwort / Substring-Matching ---
+    for (const qt of qTokens) {
+      if (qt.length < 3) continue;
+      // Enthalten im Titel
+      if (titleLow.includes(qt)) score += 10;
+      // Enthalten in Beschreibung
+      else if (descLow.includes(qt)) score += 5;
+      // Enthalten im Dateinamen
+      else if (filenameLow.includes(qt)) score += 8;
+      // Enthalten in Kategorie
+      else if (catLow.includes(qt)) score += 4;
+
+      // --- Algorithmus 4: Fuzzy / Levenshtein (Tippfehler-Toleranz) ---
+      const fuzzy = DocBrowser.fuzzyFind(qt, docTokens);
+      if (fuzzy.found) score += fuzzy.score;
+    }
+
+    // --- Algorithmus 5: Stemming (Wortstamm-Reduktion) ---
+    if (typeof AIEngine !== 'undefined' && AIEngine.stem) {
+      for (const qt of qTokens) {
+        const stemmed = AIEngine.stem(qt);
+        if (stemmed !== qt && docTokens.some(t => t.includes(stemmed) || stemmed.includes(t))) {
+          score += 8;
+        }
+      }
+    }
+
+    // --- Algorithmus 6: Synonym-Erweiterung ---
+    if (typeof AIEngine !== 'undefined' && AIEngine.synonyms) {
+      for (const qt of qTokens) {
+        const expanded = AIEngine.synonyms[qt];
+        if (expanded && expanded !== qt) {
+          const expTokens = DocBrowser.tokenize(expanded);
+          const synMatch = expTokens.filter(t => docTokens.includes(t));
+          score += synMatch.length * 6;
+        }
+      }
+    }
+
+    // --- Algorithmus 7: Bigram-Ähnlichkeit (Jaccard) ---
+    const bigramScore = DocBrowser.bigramSimilarity(qTokens, docTokens);
+    score += bigramScore * 20;
+
+    // --- Algorithmus 8: Pfad-Bonus für Netzwerkpfade ---
+    const isNetPath = filenameLow.startsWith('\\\\') || filenameLow.includes(':/');
+    if (isNetPath && matchedTokens.length > 0) {
+      score += 5; // Netzwerkdokumente bevorzugen wenn Treffer
+    }
+
+    return score;
+  },
+
+  /* ---------- Hilfsfunktionen ---------- */
+
+  // Levenshtein-Fuzzy-Suche: findet ähnliche Tokens (Tippfehler-erlaubt)
+  fuzzyFind(token, candidates, maxDist) {
+    maxDist = maxDist || Math.max(1, Math.floor(token.length / 3));
+    let best = { found: false, score: 0, match: '' };
+    for (const c of candidates) {
+      if (c === token) continue;
+      const dist = DocBrowser.levenshtein(token, c);
+      if (dist <= maxDist && dist > 0) {
+        const sim = 1 - dist / Math.max(token.length, c.length);
+        const s = Math.round(sim * 12);
+        if (s > best.score) best = { found: true, score: s, match: c };
+      }
+    }
+    return best;
+  },
+
+  levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]) + 1;
+      }
+    }
+    return dp[m][n];
+  },
+
+  // Tokenisierung (wie AIEngine, aber ohne Stopwort-Filter für Dokumente)
+  tokenize(text) {
+    if (!text) return [];
+    return text.toLowerCase()
+      .replace(/[.,!?;:()""''«»\-–—/\\\[\]{}|@#$%^&*+=<>~`]/g, ' ')
+      .split(/\s+/)
+      .filter(t => t.length > 1);
+  },
+
+  bigramSimilarity(tokens1, tokens2) {
+    const set1 = new Set(tokens1);
+    const set2 = new Set(tokens2);
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const union = new Set([...set1, ...set2]);
+    if (union.size === 0) return 0;
+    return intersection.size / union.size;
   },
 
   showPreview(doc) {
@@ -804,6 +985,7 @@ const DocBrowser = {
         <dt>Dateityp</dt><dd>${doc.type.toUpperCase()}</dd>
         <dt>Datum</dt><dd>${doc.date}</dd>
         <dt>Dateiname</dt><dd>${doc.filename}</dd>
+        <dt>Netzwerkpfad</dt><dd style="font-family:monospace;font-size:0.8rem;word-break:break-all;">\\\\lsserver\\qm-handbuch\\${doc.filename}</dd>
       </dl>
     `;
     document.getElementById('doc-preview-body').innerHTML = `

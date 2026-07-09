@@ -105,6 +105,43 @@
     </div>
   </section>
 
+  <!-- ===== DOKUMENTE ===== -->
+  <section id="dokumente" class="section-alt doc-section" aria-labelledby="doc-title">
+    <div class="container">
+      <h2 id="doc-title" class="section-title">QM-Dokumente & Verfahrensanweisungen</h2>
+      <p class="section-subtitle">Durchsuchen Sie die Verfahrensanweisungen, Formulare und QM-Dokumente der Lebenshilfe Braunschweig nach Kategorien.</p>
+
+      <div class="doc-browser">
+        <div class="doc-header">
+          <h3>Dokumentenbrowser</h3>
+          <div class="doc-search">
+            <input type="text" id="doc-search-input" placeholder="Dokument suchen…" aria-label="Dokument suchen">
+            <button id="doc-search-btn" aria-label="Suchen">Suchen</button>
+          </div>
+        </div>
+        <div class="doc-categories" id="doc-categories" role="tablist" aria-label="Dokument-Kategorien">
+          <button class="active" data-cat="Alle" role="tab">Alle</button>
+        </div>
+        <div class="doc-list" id="doc-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DOCUMENT PREVIEW MODAL ===== -->
+  <div id="doc-preview-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="doc-preview-title">
+    <div class="modal doc-preview-content">
+      <button class="modal-close" id="doc-preview-close" aria-label="Schließen">✕</button>
+      <h2 id="doc-preview-title">Dokumentvorschau</h2>
+      <div id="doc-preview-meta" class="doc-preview-meta"></div>
+      <div id="doc-preview-body" class="doc-preview-body">
+        <p>Inhalt wird geladen…</p>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" id="doc-preview-close-btn">Schließen</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== PROZESSMANAGEMENT ===== -->
   <section id="prozesse" class="section" aria-labelledby="prozesse-title">
     <div class="container">
@@ -154,7 +191,7 @@
 
       <div class="bsc-grid">
         <div class="bsc-card finance">
-          <h4>💰 Finanzperspektive</h4>
+          <h4>Finanzperspektive</h4>
           <ul>
             <li>Kostendeckungsgrad der Angebote</li>
             <li>Wirtschaftlichkeit der Einrichtungen</li>
@@ -163,7 +200,7 @@
           </ul>
         </div>
         <div class="bsc-card client">
-          <h4>👥 Klientenperspektive</h4>
+          <h4>Klientenperspektive</h4>
           <ul>
             <li>Zufriedenheit der Klienten</li>
             <li>Lebensqualität und Teilhabe</li>
@@ -172,7 +209,7 @@
           </ul>
         </div>
         <div class="bsc-card process">
-          <h4>🔁 Interne Prozessperspektive</h4>
+          <h4>Interne Prozessperspektive</h4>
           <ul>
             <li>Qualität der Pflege und Betreuung</li>
             <li>Auditergebnisse</li>
@@ -181,7 +218,7 @@
           </ul>
         </div>
         <div class="bsc-card learning">
-          <h4>📚 Lern- & Entwicklungsperspektive</h4>
+          <h4>Lern- & Entwicklungsperspektive</h4>
           <ul>
             <li>Mitarbeiterzufriedenheit</li>
             <li>Fortbildungsquote</li>
@@ -211,28 +248,28 @@
             <!-- Finance - Top -->
             <rect x="270" y="30" width="160" height="70" rx="10" fill="#00A336" opacity="0.12"/>
             <rect x="270" y="30" width="160" height="70" rx="10" fill="none" stroke="#00A336" stroke-width="1.5"/>
-            <text x="350" y="60" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#00A336">💰 Finanzen</text>
+            <text x="350" y="60" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#00A336">Finanzen</text>
             <text x="350" y="80" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-size="10" fill="#555">Wirtschaftlichkeit</text>
             <line x1="350" y1="100" x2="350" y2="144" stroke="#00A336" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>
 
             <!-- Client - Right -->
             <rect x="510" y="165" width="160" height="70" rx="10" fill="#EB6600" opacity="0.12"/>
             <rect x="510" y="165" width="160" height="70" rx="10" fill="none" stroke="#EB6600" stroke-width="1.5"/>
-            <text x="590" y="195" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#EB6600">👥 Klienten</text>
+            <text x="590" y="195" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#EB6600">Klienten</text>
             <text x="590" y="215" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-size="10" fill="#555">Zufriedenheit</text>
             <line x1="510" y1="200" x2="406" y2="200" stroke="#EB6600" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>
 
             <!-- Process - Bottom -->
             <rect x="270" y="300" width="160" height="70" rx="10" fill="#0B6BB4" opacity="0.12"/>
             <rect x="270" y="300" width="160" height="70" rx="10" fill="none" stroke="#0B6BB4" stroke-width="1.5"/>
-            <text x="350" y="330" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#0B6BB4">🔁 Prozesse</text>
+            <text x="350" y="330" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#0B6BB4">Prozesse</text>
             <text x="350" y="350" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-size="10" fill="#555">Audits & Qualität</text>
             <line x1="350" y1="300" x2="350" y2="256" stroke="#0B6BB4" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>
 
             <!-- Learning - Left -->
             <rect x="30" y="165" width="160" height="70" rx="10" fill="#B63E8C" opacity="0.12"/>
             <rect x="30" y="165" width="160" height="70" rx="10" fill="none" stroke="#B63E8C" stroke-width="1.5"/>
-            <text x="110" y="195" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#B63E8C">📚 Lernen</text>
+            <text x="110" y="195" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-weight="bold" font-size="13" fill="#B63E8C">Lernen</text>
             <text x="110" y="215" text-anchor="middle" font-family="'Lebenshilfe Sans Serif', Arial" font-size="10" fill="#555">Fortbildung</text>
             <line x1="190" y1="200" x2="294" y2="200" stroke="#B63E8C" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>
 
@@ -250,7 +287,7 @@
   <!-- ===== FAQ ===== -->
   <section id="faq" class="section" aria-labelledby="faq-title">
     <div class="container">
-      <h2 id="faq-title" class="section-title">❓ Häufig gestellte Fragen</h2>
+      <h2 id="faq-title" class="section-title">Häufig gestellte Fragen</h2>
       <p class="section-subtitle">Durchstöbern Sie die Wissensdatenbank zu Prozessmanagement, Qualitätsmanagement und mehr.</p>
 
       <div class="category-filters" role="tablist" aria-label="Kategorien filtern">
@@ -259,43 +296,6 @@
       <div class="faq-list" role="list"></div>
     </div>
   </section>
-
-  <!-- ===== DOKUMENTE ===== -->
-  <section id="dokumente" class="section-alt doc-section" aria-labelledby="doc-title">
-    <div class="container">
-      <h2 id="doc-title" class="section-title">QM-Dokumente & Verfahrensanweisungen</h2>
-      <p class="section-subtitle">Durchsuchen Sie die Verfahrensanweisungen, Formulare und QM-Dokumente der Lebenshilfe Braunschweig nach Kategorien.</p>
-
-      <div class="doc-browser">
-        <div class="doc-header">
-          <h3>Dokumentenbrowser</h3>
-          <div class="doc-search">
-            <input type="text" id="doc-search-input" placeholder="Dokument suchen…" aria-label="Dokument suchen">
-            <button id="doc-search-btn" aria-label="Suchen">Suchen</button>
-          </div>
-        </div>
-        <div class="doc-categories" id="doc-categories" role="tablist" aria-label="Dokument-Kategorien">
-          <button class="active" data-cat="Alle" role="tab">Alle</button>
-        </div>
-        <div class="doc-list" id="doc-list"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== DOCUMENT PREVIEW MODAL ===== -->
-  <div id="doc-preview-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="doc-preview-title">
-    <div class="modal doc-preview-content">
-      <button class="modal-close" id="doc-preview-close" aria-label="Schließen">✕</button>
-      <h2 id="doc-preview-title">Dokumentvorschau</h2>
-      <div id="doc-preview-meta" class="doc-preview-meta"></div>
-      <div id="doc-preview-body" class="doc-preview-body">
-        <p>Inhalt wird geladen…</p>
-      </div>
-      <div class="form-actions">
-        <button class="btn-cancel" id="doc-preview-close-btn">Schließen</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ===== ADMIN TOGGLE ===== -->
   <div class="admin-toggle">
