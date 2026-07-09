@@ -35,10 +35,10 @@ const ChatbotUI = {
   updateModeIndicator() {
     if (!this.modeIndicator) return;
     if (AppConfig.mode === 'ollama') {
-      this.modeIndicator.innerHTML = '🟢 KI (Ollama)';
+      this.modeIndicator.innerHTML = 'KI (Ollama)';
       this.modeIndicator.style.color = '#00A336';
     } else {
-      this.modeIndicator.innerHTML = '🟡 Lokal (NLP)';
+      this.modeIndicator.innerHTML = 'Lokal (NLP)';
       this.modeIndicator.style.color = '#EB6600';
     }
   },
@@ -165,7 +165,7 @@ const ChatbotUI = {
       // Mode 1: Lokale NLP-KI
       const result = AIEngine.findBestAnswer(query);
 
-      if (result.answer && result.confidence >= 0.35) {
+      if (result && result.answer && result.confidence >= 0.35) {
         const confidenceText = AIEngine.formatConfidence(result.confidence);
         answerText = `${confidenceText}\n\n${result.answer}`;
         if (result.related && result.related.length > 0) {
@@ -178,31 +178,33 @@ const ChatbotUI = {
         followUpSuggestions = this.getFollowUpQuestions(result.category, query);
         this.hideTyping();
         this._lastResponseShown = true;
-        this.addBotMessage(answerText, { sources: result.sources, suggestions: followUpSuggestions });
-        this.showSuggestions(result.category, query);
+        this.addBotMessage(answerText, { sources: result.sources || [result.category], suggestions: followUpSuggestions });
+        try { this.showSuggestions(result.category, query); } catch (e2) { console.error('showSuggestions error:', e2); }
       } else {
-        const suggestions = result.suggestions || [];
+        const suggestions = (result && result.suggestions) || [];
         const fallback = AIEngine.generateFallback(query, suggestions);
         followUpSuggestions = this.getFallbackSuggestions(query);
         this.hideTyping();
         this._lastResponseShown = true;
         this.addBotMessage(
-          `🤔 **Ich habe keine passende Antwort gefunden.**\n\n${fallback}`,
+          `**Ich habe keine passende Antwort gefunden.**\n\n${fallback}`,
           { sources: [], suggestions: followUpSuggestions }
         );
-        this.showSuggestions(null, query);
+        try { this.showSuggestions(null, query); } catch (e2) { console.error('showSuggestions error:', e2); }
       }
     } catch (e) {
       console.error('Fehler bei der Antwortfindung:', e);
       this.hideTyping();
       this._lastResponseShown = true;
+      const errMsg = e?.message || 'Unbekannter Fehler';
       this.addBotMessage(
         '**Es ist ein technischer Fehler aufgetreten.**\n\n' +
         'Bitte versuchen Sie es erneut. Falls das Problem bestehen bleibt, ' +
-        'laden Sie die Seite neu oder wenden Sie sich an die QM-Abteilung.',
+        'laden Sie die Seite neu oder wenden Sie sich an die QM-Abteilung.' +
+        `\n\n_(Fehler: ${ChatbotUI.escapeHtml(errMsg)})_`,
         { sources: [] }
       );
-      this.showSuggestions();
+      try { this.showSuggestions(); } catch (e2) { console.error('showSuggestions error:', e2); }
     }
   },
 

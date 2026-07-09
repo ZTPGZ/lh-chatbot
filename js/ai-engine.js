@@ -378,10 +378,10 @@ const AIEngine = {
    * Antwort mit Konfidenz-Badge formatieren
    */
   formatConfidence(confidence) {
-    if (confidence >= 0.8) return '🤖 Sehr gute Übereinstimmung';
-    if (confidence >= 0.6) return '🤖 Gute Übereinstimmung';
-    if (confidence >= 0.35) return '🤖 Ähnliche Frage gefunden';
-    return '🤖 Schwache Übereinstimmung';
+    if (confidence >= 0.8) return 'Sehr gute Übereinstimmung';
+    if (confidence >= 0.6) return 'Gute Übereinstimmung';
+    if (confidence >= 0.35) return 'Ähnliche Frage gefunden';
+    return 'Schwache Übereinstimmung';
   },
 
   /*
@@ -421,7 +421,7 @@ const AIEngine = {
       random.forEach(item => parts.push(`- ${item.question}`));
     }
 
-    parts.push('💡 Als Admin können Sie im Admin-Panel neue Fragen und Antworten hinzufügen.');
+    parts.push('Als Admin können Sie im Admin-Panel neue Fragen und Antworten hinzufügen.');
 
     return parts.join('\n');
   },
