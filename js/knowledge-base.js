@@ -39,7 +39,18 @@ const KnowledgeBase = {
   getAll() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      try { return JSON.parse(stored); } catch(e) {}
+      try {
+        const data = JSON.parse(stored);
+        // Fehlende Felder aus den Defaults mergen (z.B. source)
+        const defaultsMap = {};
+        DEFAULT_KNOWLEDGE_BASE.forEach(d => { defaultsMap[d.id] = d; });
+        const merged = data.map(entry => {
+          const def = defaultsMap[entry.id];
+          return def ? { ...def, ...entry } : entry;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      } catch(e) {}
     }
     this.seed();
     return [...DEFAULT_KNOWLEDGE_BASE];

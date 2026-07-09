@@ -140,10 +140,15 @@ const ChatbotUI = {
       <div class="bubble">${this.formatMessage(text)}`;
     if (extras) {
       if (extras.sourceUrl) {
-        html += `<div class="source-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> <a href="${this.escapeHtml(extras.sourceUrl)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a></div>`;
+        html += `<div class="source-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> <a href="${this.escapeHtml(extras.sourceUrl)}" target="_blank" rel="noopener noreferrer"><strong>Quelle öffnen</strong></a></div>`;
       }
       if (extras.sources && extras.sources.length) {
-        html += `<div class="sources"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ${this.escapeHtml(extras.sources.join(', '))}</div>`;
+        const srcHtml = extras.sources.map(s => {
+          const label = typeof s === 'string' ? s : s.label;
+          const url = extras.sourceUrl || (typeof s === 'object' ? s.url : '');
+          return url ? `<a href="${this.escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(label)}</a>` : this.escapeHtml(label);
+        }).join(', ');
+        html += `<div class="sources"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ${srcHtml}</div>`;
       }
     }
     html += `</div>`;
@@ -217,7 +222,7 @@ const ChatbotUI = {
           followUpSuggestions = this.getFollowUpQuestions(null, query);
           this.hideTyping();
           this._lastResponseShown = true;
-          this.addBotMessage(answerText, { sources: backendResult.sources || [], suggestions: followUpSuggestions });
+          this.addBotMessage(answerText, { sourceUrl: backendResult.source || '', sources: backendResult.sources || [], suggestions: followUpSuggestions });
           this.showSuggestions(null, query);
           return;
         }
