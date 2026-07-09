@@ -131,7 +131,7 @@ const AIEngine = {
     selbstbestimmung: 'selbstbestimmung',
     selbstbestimmt: 'selbstbestimmung',
     autonomie: 'selbstbestimmung',
-    leichte sprache: 'leichte sprache',
+    'leichte sprache': 'leichte sprache',
     verständlich: 'leichte sprache',
 
     // Beschwerdemanagement
